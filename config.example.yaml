@@ -1,0 +1,11 @@
+# config.example.yaml
+app:
+  port: ":8080"
+  env: "development"
+database:
+  host: "localhost"
+  user: "user"
+  password: "your-password-here"
+  name: "membership"
+jwt:
+  secret: "your-jwt-secret"
