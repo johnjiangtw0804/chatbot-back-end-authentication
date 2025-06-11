@@ -1,7 +1,12 @@
 package env
 
-import "github.com/spf13/viper"
+import (
+	"log"
 
+	"github.com/spf13/viper"
+)
+
+// https://github.com/spf13/viper
 // squash tag allows flattening embedded structs
 type AppConfig struct {
 	Name     string `mapstructure:"name"`
@@ -15,6 +20,7 @@ type DatabaseConfig struct {
 	User     string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
 	Name     string `mapstructure:"name"`
+	Port     string `mapstructure:"Port"`
 }
 
 type JWT struct {
@@ -32,13 +38,13 @@ func LoadConfig() (*Configuration, error) {
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	if err := viper.ReadInConfig(); err != nil {
-		// logger.Errorf("Error reading config file, %s", err)
+		log.Fatalf("Error reading config file, %s", err)
 		return nil, err
 	}
 
 	err := viper.Unmarshal(&config)
 	if err != nil {
-		// logger.Errorf("error to decode, %v", err)
+		log.Fatalf("error to decode, %v", err)
 		return nil, err
 	}
 

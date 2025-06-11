@@ -7,5 +7,6 @@ database:
   user: "user"
   password: "your-password-here"
   name: "membership"
+  port: "5432"
 jwt:
   secret: "your-jwt-secret"

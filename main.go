@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -9,13 +10,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	config "github.com/johnjiangtw0804/chatbot-back-end-authentication/env"
+	"github.com/johnjiangtw0804/chatbot-back-end-authentication/models"
+	"github.com/johnjiangtw0804/chatbot-back-end-authentication/router"
 	viper "github.com/spf13/viper"
 )
 
 func main() {
 	var err error
+
+	// Set up the timezone so when program executes, it knows what timezone it is in
 	viper.SetDefault("SERVER_TIMEZONE", "UTC")
 	loc, err := time.LoadLocation(viper.GetString("SERVER_TIMEZONE"))
 	if err != nil {
@@ -23,22 +27,28 @@ func main() {
 	}
 	time.Local = loc
 
-	/** Init config */
+	// load the config file
 	env, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("LoadConfig fail: %v", err)
 	}
-
 	log.Println(env.App)
 	log.Println(env.Database)
 	log.Println(env.Jwt)
 
-	// r := gin.Default()
+	// construct DB connection
+	dbConnection, err := models.RegisterDB(env)
+	if err != nil {
+		log.Fatalf("DB connection setup failed: %v", err)
+	}
 
-	router := gin.Default()
+	router, err := router.RegisterRouter(env, dbConnection)
+	if err != nil {
+		log.Fatalf("router setup failed: %v", err)
+	}
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%s", env.App.Port),
 		Handler: router.Handler(),
 	}
 
@@ -50,12 +60,12 @@ func main() {
 	}()
 
 	// Wait for interrupt signal to gracefully shutdown the server with
-	// a timeout of 5 seconds.
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Shutdown Server ...")
 
+	// a timeout of 5 seconds.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {

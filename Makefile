@@ -8,6 +8,9 @@ DB_PORT ?= 5432
 DB_LOG_MODE ?= True
 PG_CONTAINER_NAME ?= local-postgres
 
+run:
+	@go run main.go
+
 # ========================
 # 🐘 PostgreSQL (Docker)
 # ========================
