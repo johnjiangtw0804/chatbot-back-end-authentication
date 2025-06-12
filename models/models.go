@@ -10,7 +10,7 @@ import (
 )
 
 type DBWrapper struct {
-	dbConnection *gorm.DB
+	PG_DBConnection *gorm.DB
 }
 
 func RegisterDB(env *config.Configuration) (*DBWrapper, error) {
@@ -26,5 +26,5 @@ func RegisterDB(env *config.Configuration) (*DBWrapper, error) {
 	)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
-	return &DBWrapper{dbConnection: db}, err
+	return &DBWrapper{PG_DBConnection: db}, err
 }
