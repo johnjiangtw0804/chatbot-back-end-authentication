@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	config "github.com/johnjiangtw0804/chatbot-back-end-authentication/env"
 	"github.com/johnjiangtw0804/chatbot-back-end-authentication/models"
 	"github.com/johnjiangtw0804/chatbot-back-end-authentication/router"
@@ -32,9 +33,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("LoadConfig fail: %v", err)
 	}
-	log.Println(env.App)
-	log.Println(env.Database)
-	log.Println(env.Jwt)
+
+	log.Println(env.AppName)
+
+	if env.AppEnv == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	// construct DB connection
 	dbConnection, err := models.RegisterDB(env)
@@ -44,18 +48,18 @@ func main() {
 
 	router, err := router.RegisterRouter(env, dbConnection)
 	if err != nil {
-		log.Fatalf("router setup failed: %v", err)
+		log.Fatalf("Router setup failed: %v", err)
 	}
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", env.App.Port),
+		Addr:    fmt.Sprintf(":%s", env.AppPort),
 		Handler: router.Handler(),
 	}
 
 	go func() {
 		// service connections
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+			log.Fatalf("Listen: %s\n", err)
 		}
 	}()
 

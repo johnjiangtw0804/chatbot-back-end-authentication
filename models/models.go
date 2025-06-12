@@ -17,11 +17,11 @@ func RegisterDB(env *config.Configuration) (*DBWrapper, error) {
 	var err error
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=%s",
-		env.Database.Host,
-		env.Database.User,
-		env.Database.Password,
-		env.Database.Name,
-		env.Database.Port,
+		env.DBHost,
+		env.DBUser,
+		env.DBPassword,
+		env.DBName,
+		env.DBPort,
 		viper.GetString("SERVER_TIMEZONE"),
 	)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
