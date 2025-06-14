@@ -10,18 +10,20 @@ import (
 	"github.com/johnjiangtw0804/chatbot-back-end-authentication/env"
 	"github.com/johnjiangtw0804/chatbot-back-end-authentication/models"
 	"github.com/johnjiangtw0804/chatbot-back-end-authentication/repository"
+	"github.com/johnjiangtw0804/chatbot-back-end-authentication/router/middleware"
 	"github.com/johnjiangtw0804/chatbot-back-end-authentication/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func registerUserRoutes(router *gin.RouterGroup, repo repository.UserRepository, config *env.Configuration) {
-	router.Group("/user")
-	user := userEndPoint{repo: repo, config: config}
 	// public API
-	router.POST("/register", user.registerHandler)
+	userRouter := router.Group("/user")
+	useEndPoint := userEndPoint{repo: repo, config: config}
+	router.POST("/register", useEndPoint.registerHandler)
 
 	// authorized API
-	router.PUT("/delete", user.deleteHandler)
+	userRouter.Use(middleware.JWTMiddleware([]byte(config.JWTSecret)))
+	userRouter.DELETE("/delete", useEndPoint.deleteHandler)
 }
 
 type userEndPoint struct {
@@ -93,7 +95,7 @@ type DeleteRequest struct {
 func (u *userEndPoint) deleteHandler(ctx *gin.Context) {
 
 	// 從 context 拿出目前登入的使用者 email（你可以存在 JWT claim 或 middleware 設定）
-	email := ctx.GetString("userEmail") // 前提是你用 middleware 設定過
+	email := ctx.GetString("email") // 前提是你用 middleware 設定過
 	if email == "" {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return

@@ -45,3 +45,9 @@ start-pg:
 
 print-env-test:
 	@echo "ENV: $(APP_ENV), DB: $(DB_NAME)@$(DB_HOST):$(DB_PORT) $(PG_CONTAINER_NAME)"
+
+# This ensures make restart-pg always runs, even if a file named restart-pg exists.
+.PHONY: migrate-up run stop-pg start-pg restart-pg print-env-test
+restart-pg:
+	@$(MAKE) stop-pg
+	@$(MAKE) start-pg
