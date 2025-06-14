@@ -10,10 +10,11 @@ import (
 // squash tag allows flattening embedded structs
 type Configuration struct {
 	// App config
-	AppName     string `mapstructure:"APP_NAME"`
-	AppPort     string `mapstructure:"APP_PORT"`
-	AppEnv      string `mapstructure:"APP_Env"`
-	AppTimeZone string `mapstructure:"APP_TIMEZONE"`
+	AppName        string `mapstructure:"APP_NAME"`
+	AppPort        string `mapstructure:"APP_PORT"`
+	AppEnv         string `mapstructure:"APP_Env"`
+	AppTimeZone    string `mapstructure:"APP_TIMEZONE"`
+	AppFrontendURL string `mapstructure:"APP_FRONTEND_URL"`
 
 	// DB config
 	DBHost     string `mapstructure:"DB_HOST"`
