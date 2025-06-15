@@ -1,5 +1,6 @@
 ### This Makefile is used for db migration and other local development task
 ### For deployment, we could simply run db migration with the correct config
+### Makefile 用 $(VAR)，Shell 用 ${VAR} 和 $(command)
 
 include config.env
 export
