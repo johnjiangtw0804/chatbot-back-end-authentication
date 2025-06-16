@@ -21,6 +21,7 @@ func RegisterRouter(conf *env.Configuration, dbConnection *models.DBWrapper) (*g
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowCredentials: true, // to allow browsers 自帶 credentials
 		ExposeHeaders:    []string{"Content-Length"},
+		// cache control header, some static assets can be cached in the browser
 	}))
 
 	router.GET("/health", func(c *gin.Context) {
