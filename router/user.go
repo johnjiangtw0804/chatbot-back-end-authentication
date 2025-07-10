@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -19,7 +18,8 @@ func registerUserRoutes(router *gin.RouterGroup, repo repository.UserRepository,
 	// public API
 	userRouter := router.Group("/user")
 	useEndPoint := userEndPoint{repo: repo, config: config}
-	router.POST("/register", useEndPoint.registerHandler)
+	userRouter.POST("/register", useEndPoint.registerHandler)
+	userRouter.POST("/login", useEndPoint.loginHandler)
 
 	// authorized API
 	userRouter.Use(middleware.JWTMiddleware([]byte(config.JWTSecret)))
@@ -54,6 +54,9 @@ func (u *userEndPoint) registerHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
 		return
 	}
+	log.Default().Printf("Found existing user")
+
+	// TODO: Might need to salt it in the future
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Default().Println("Failed to hash password")
@@ -74,7 +77,6 @@ func (u *userEndPoint) registerHandler(ctx *gin.Context) {
 	}
 
 	// generate a token and return to the user
-	log.Default().Println(fmt.Sprintf("%s %d %s", u.config.JWTSecret, newUser.ID, newUser.Email))
 	token, err := utils.GenerateJWT(u.config.JWTSecret, newUser.ID, newUser.Email)
 	if err != nil {
 		log.Default().Println("Failed to generate JWT " + err.Error())
@@ -83,6 +85,44 @@ func (u *userEndPoint) registerHandler(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusCreated, gin.H{
 		"message": "User registered successfully",
+		"token":   token,
+	})
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+func (u *userEndPoint) loginHandler(ctx *gin.Context) {
+	var req LoginRequest
+	if err := ctx.ShouldBind(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input: " + err.Error()})
+		return
+	}
+
+	user, err := u.repo.FindByEmail(strings.ToLower(req.Email))
+	if err != nil {
+		// If you didn't find the user, treat it as 401 Unauthorized
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		// Password does not match
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		return
+	}
+
+	// generate a token and return to the user
+	token, err := utils.GenerateJWT(u.config.JWTSecret, user.ID, user.Email)
+	if err != nil {
+		log.Default().Println("Failed to generate JWT " + err.Error())
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate JWT"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "User login successfully",
 		"token":   token,
 	})
 }
