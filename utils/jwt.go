@@ -16,6 +16,7 @@ func GenerateJWT(secretKey string, userID uint, email string) (string, error) {
 	claims := Claims{
 		UserID: userID,
 		Email:  email,
+		// TODO: could extend this
 		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
 			IssuedAt: jwt.NewNumericDate(time.Now())},
 	}
