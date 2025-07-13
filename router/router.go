@@ -1,16 +1,14 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/johnjiangtw0804/chatbot-back-end-authentication/env"
 	"github.com/johnjiangtw0804/chatbot-back-end-authentication/models"
 	"github.com/johnjiangtw0804/chatbot-back-end-authentication/repository"
+	"github.com/johnjiangtw0804/chatbot-back-end-authentication/router/middleware"
 )
 
 func RegisterRouter(conf *env.Configuration, dbConnection *models.DBWrapper) (*gin.Engine, error) {
@@ -27,25 +25,21 @@ func RegisterRouter(conf *env.Configuration, dbConnection *models.DBWrapper) (*g
 		// cache control header, some static assets can be cached in the browser
 	}))
 
+	// repos
+	userRepo := repository.NewUserRepository(dbConnection)
+
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "OK"})
 	})
 
-	router.GET("/validate", func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing or invalid"})
+	router.GET("/validate", middleware.JWTMiddleware([]byte(conf.JWTSecret)), func(c *gin.Context) {
+		email := c.GetString("email")
+		if email == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
-
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		fmt.Println(tokenString)
-
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return []byte(conf.JWTSecret), nil
-		})
-
-		if err != nil || !token.Valid {
+		user, err := userRepo.FindByEmail(email)
+		if err != nil || user == nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
@@ -58,7 +52,6 @@ func RegisterRouter(conf *env.Configuration, dbConnection *models.DBWrapper) (*g
 
 	v1 := router.Group("/api/v1")
 	{
-		userRepo := repository.NewUserRepository(dbConnection)
 		registerUserRoutes(v1, userRepo, conf)
 	}
 
